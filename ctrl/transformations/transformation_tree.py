@@ -10,8 +10,8 @@ from numbers import Number
 
 import networkx as nx
 from torch import nn
-
-from ctrl.commons.tree import Tree
+from enum import Enum
+from ctrl.commons.tree import Tree 
 from ctrl.transformations.transformation import Transformation
 from ctrl.transformations.transformation_pool import TransformationPool
 
@@ -19,8 +19,9 @@ logger = logging.getLogger(__name__)
 
 
 class TransformationTree(TransformationPool, Tree, ABC):
-    def __init__(self, *args, **kwargs):
-        self._node_index = defaultdict()
+    def __init__(self, ordered=False, *args, **kwargs):
+        self.ordered=ordered
+        self._node_index = defaultdict()        
         self._node_index.default_factory = self._node_index.__len__
         super().__init__(*args, **kwargs)
 
@@ -31,7 +32,13 @@ class TransformationTree(TransformationPool, Tree, ABC):
         if allowed_trans is not None:
             allowed_nodes = set(trans.path[-1] for trans in allowed_trans)
         else:
-            allowed_nodes = None
+            allowed_nodes = None   
+        #here is where it selects random node
+        if self.ordered:
+            if allowed_nodes is not None:
+                allowed_nodes={min(allowed_nodes)}
+            else:
+                allowed_nodes={min(self.leaf_nodes-set(exclude_nodes))}
         node = self.get_compatible_nodes(exclude_nodes=exclude_nodes,
                                          force_nodes=allowed_nodes,
                                          leaf_only=True)

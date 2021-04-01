@@ -9,9 +9,13 @@ import numpy as np
 from ctrl.strategies.task_creation_strategy import TaskCreationStrategy
 
 
-class SplitStrategy(TaskCreationStrategy):
+class SplitStrategy(TaskCreationStrategy):       
     def __init__(self, reuse_attrs, with_replacement, traj=None,
-                 first_level_weighting=False, *args, **kwargs):
+                 first_level_weighting=False, repeat_task=0, force_concept_order=False, concept_order=None, *args, **kwargs):
+        self.force_concept_order = force_concept_order
+        self.order = concept_order
+        if repeat_task>0:
+            traj=[ t for t in traj for i in range(repeat_task)]
         super().__init__(*args, **kwargs)
         self.reuse_attrs = reuse_attrs
         self.with_replacement = with_replacement
@@ -48,6 +52,11 @@ class SplitStrategy(TaskCreationStrategy):
                 else:
                     branch = None
                     nodes = None
+                if self.force_concept_order and self.order is not None:
+                    nodes=[]
+                    for c in traj_step:
+                        nodes.append(self.order[c])
+                    branch=None
                 new_concepts = concepts.get_compatible_concepts(len(traj_step),
                                                             old_concepts, True,
                                                             preferred_lca_dist=self.concepts_preferred_lca_dist,

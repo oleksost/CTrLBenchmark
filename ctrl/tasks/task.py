@@ -109,7 +109,8 @@ class Task(object):
         """
         return self.datasets[split].tensors[0]
 
-    def get_labels(self, split, prop):
+
+    def get_labels(self, split, prop):    
         return self.datasets[split].tensors[1][:, prop]
 
     def plot_task(self, viz, name):

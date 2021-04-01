@@ -10,18 +10,21 @@ from torchvision.transforms import transforms
 
 
 class InputDomainMutationStrategy(TaskCreationStrategy):
-    def __init__(self, min_edit, max_edit, with_replacement, trans_trajectory,
+    def __init__(self, min_edit, max_edit, with_replacement, trans_trajectory, repeat_transforms=0,
                  *args, **kwargs):
         super(InputDomainMutationStrategy, self).__init__(*args, **kwargs)
         self.min_edit = min_edit
-        self.max_edit = max_edit
-        self.with_replacement = with_replacement
+        self.max_edit = max_edit      
+        self.with_replacement = with_replacement   
+        if repeat_transforms>0 and trans_trajectory is not None:
+            trans_trajectory= [ t for i in range(repeat_transforms) for t in trans_trajectory]
         self.trans_trajectory = trans_trajectory
         self.idx = 0
+        # self.cycle=cycle
 
     def new_task(self, task_spec, concepts, trans, previous_tasks):
         cur_task_id = self.idx
-        if self.trans_trajectory is not None:
+        if self.trans_trajectory is not None:  
             cur_trans_id = self.trans_trajectory[cur_task_id]
             first_usage = self.trans_trajectory.index(cur_trans_id)
             if first_usage < cur_task_id:
@@ -43,6 +46,7 @@ class InputDomainMutationStrategy(TaskCreationStrategy):
                 transforms.ToTensor()
             ])
             new_transfo = BatchedTransformation(trans, 'Identity')
+        
         elif self.min_edit < 0 or self.max_edit < 0:
             new_transfo = trans.get_transformation(exclude_trans=exclude,
                                                    allowed_trans=allowed_trans)

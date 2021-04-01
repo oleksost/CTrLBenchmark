@@ -83,7 +83,7 @@ class ConceptTree(Tree):
 
     def get_compatible_concepts(self, N=None, exclude_concepts=None,
                                 leaf_only=False, preferred_lca_dist=-1,
-                                max_lca_dist=-1, branch=None, nodes=None):
+                                max_lca_dist=-1, branch=None, nodes=None, force_classes=None):
         """
         Searches for N compatible concepts in the pool
         :param N: Int, Number of concepts to select

@@ -1,0 +1,45 @@
+task_gen:
+    _name: task_gen
+    n_initial_classes: 5
+    samples_per_class: [5000, 100, 1000]
+    split_names: ['Train', 'Val', 'Test']
+    tta: False
+
+    concept_pool:
+        _name: md_tree
+
+    transformation_pool:     
+        _name: rainbow_x_transformation_withdigit
+        train: True
+        ordered: True
+
+    strat:
+        _name: mixed_remember
+        random_select: False
+        strategies:
+            split:
+                _name: split    
+                force_concept_order: True
+                concept_order: [mnist 0 - zero, mnist 1 - one, mnist 2 - two, mnist 3 - three, mnist 4 - four, mnist 5 - five, mnist 6 - six,  mnist 7 - seven, mnist 8 - eight, mnist 9 - nine]
+                with_replacement: False
+                traj: [[mnist, 0, 1], 
+                        [mnist, 2, 3],
+                        [mnist, 4, 5],
+                        [mnist, 6, 7],
+                        [mnist, 8, 9]]
+            data:
+                _name: data
+                n_samples_per_class_options: [[4000, 200],
+                                                [4000, 200],
+                                                [4000, 200],
+                                                [4000, 200],
+                                                [4000, 200]]
+                random: False
+                with_replacement: False
+            transfo:
+                _name: transfo
+                #0 - blue background
+                # 1 - red background
+                #
+                # 3 - 
+                trans_trajectory: [0, 1, 2, 3, 4, 5]

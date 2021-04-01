@@ -60,18 +60,28 @@ def _generate_samples_from_descr(categories, attributes, n_samples_per_class,
 
     samples = []
     labels = []
-    for i, cat_concepts in enumerate(categories):
+    for i, cat_concepts in enumerate(categories):  
         mixture = ComposedConcept(cat_concepts, id=None)
         cat_samples = []
         cat_labels = []
         for s_id, n in enumerate(n_samples_per_class):
-            split_samples, split_attrs = mixture._get_samples(n, attributes,
+            if isinstance(n, list):
+                n_samples, n_labeled = n[0], n[1]
+            else:
+                n_samples, n_labeled = n, n
+
+            split_samples, split_attrs = mixture._get_samples(n_samples, attributes,
                                                               split_id=s_id, rng=rnd)
             if s_id in augment:
                  split_samples = augment_samples(split_samples)
             split_labels = torch.Tensor().long()
             cat_id = torch.tensor([i]).expand(split_samples.shape[0], 1)
             split_labels = torch.cat([split_labels, cat_id], dim=1)
+            #Create unlabeled samples
+            n_unlabeled=n_samples-n_labeled
+            if n_unlabeled>0:
+                idx_unlabeled = rnd.choice(list(range(n_samples)), n_unlabeled, replace=False)
+                split_labels[idx_unlabeled]=-1 #mark unlabeled samples with -1
 
             cat_samples.append(split_samples)
             cat_labels.append(split_labels)
@@ -108,7 +118,7 @@ class TaskGenIter(object):
 class TaskGenerator(object):
     def __init__(self, concept_pool: ConceptTree, transformation_pool,
                  samples_per_class, split_names, strat,
-                 seed: int, flatten, n_initial_classes, use_cat_id, tta,
+                 seed: int, flatten, n_initial_classes, use_cat_id, tta, cycle_transforms=False,
                  *args, **kwargs):
         """
 
@@ -146,6 +156,7 @@ class TaskGenerator(object):
 
         self.strat = strat
         self.contains_loaded_tasks = False
+        self.cycle_transforms=cycle_transforms
 
     @property
     def n_tasks(self):
@@ -210,7 +221,7 @@ class TaskGenerator(object):
 
     def _create_task(self, task_spec, name, save_path):
         concepts = task_spec.src_concepts
-        attributes = task_spec.attributes
+        attributes = task_spec.attributes  
         transformation = task_spec.transformation
         n_samples_per_class = task_spec.n_samples_per_class
 

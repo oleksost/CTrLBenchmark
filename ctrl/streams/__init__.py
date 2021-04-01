@@ -20,7 +20,7 @@ from ctrl.tasks.task_generator import TaskGenerator
 from ctrl.transformations import RandomNNTransformationTree, \
     ImgRotationTransformationTree, RandomPermutationsTransformation, \
     IdentityTransformation, NoisyNNTransformationTree, \
-    RainbowTransformationTree
+    RainbowTransformationTree, RainbowTransformationTreewithDigits
 
 
 def get_component_by_name(name):
@@ -42,6 +42,8 @@ def get_component_by_name(name):
         return NoisyNNTransformationTree
     if name == 'rainbow_x_transformation':
         return RainbowTransformationTree
+    if name == 'rainbow_x_transformation_withdigit':
+        return RainbowTransformationTreewithDigits
 
     if name == 'transfo':
         return InputDomainMutationStrategy
@@ -146,3 +148,5 @@ def get_stream(name, seed=None):
 
 
 
+if __name__ == "__main__": 
+   get_stream('s_full')

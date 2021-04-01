@@ -22,7 +22,7 @@ class Tree(abc.ABC):
         self.leaf_nodes = set()
         self.all_nodes = set()
 
-        self._seed = seed
+        self._seed = seed       
         self.rnd = random.Random(self._seed)
         self.root_node = self.build_tree()
 

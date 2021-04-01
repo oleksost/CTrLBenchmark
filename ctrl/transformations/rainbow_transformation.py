@@ -11,17 +11,18 @@ from torchvision import transforms
 from torchvision.transforms import RandomAffine
 
 ROTATIONS = {
-    '0': 0,
-    # '90': 90,
-    # '180': 180,
-    # '270': 270
+    'rotation_0': 0,
+    # 'rotation_90': 90,
+    # 'rotation_180': 180,
+    # 'rotation_270': 270
 }
 
 COLORS = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
+COLORS_RG = [[255, 0, 0], [0, 255, 0]]
 OLD_BACKGOUND = [0]
 
 SCALES = {
-    'full': 1,
+    'scale_full': 1,
     # '3/4': 0.75,
     # 'half': 0.5,
     # '1/4': 0.25
@@ -57,7 +58,7 @@ def change_background_color(images, old_background, new_background):
     :param images: BCHW
     :return:
     """
-    assert old_background == [0]
+    assert old_background == [0]     
     if not torch.is_tensor(new_background):
         new_background = torch.tensor(new_background, dtype=images.dtype)
         if images.max() <= 1 and new_background.max() > 1:
@@ -81,12 +82,47 @@ def change_background_color(images, old_background, new_background):
     return imgs
 
 
+def change_digit_color(images, old_color, new_color):
+    """
+    :param images: BCHW
+    :return:
+    """
+    assert old_color == [0]
+    if not torch.is_tensor(new_color):
+        new_color = torch.tensor(new_color, dtype=images.dtype)
+        if images.max() <= 1 and new_color.max() > 1:
+            new_color /= 255
+
+    if images.size(1) == 1:
+        images = images.expand(-1, 3, -1, -1)
+    else:
+        assert images.size(1) == len(new_color)
+        # raise NotImplementedError(images.size(), new_background)
+
+    images = images.clone()
+
+    new_color = new_color.view(-1, 1, 1)
+    imgs = images * new_color
+    # print(images[:, 0, :, :].std().item(),images[:, 1, :, :].std().item(),images[:, 2, :, :].std().item())
+    # print(imgs[:, 0, :, :].std().item(), imgs[:, 1, :, :].std().item(), imgs[:, 2, :, :].std().item())
+    return imgs
+
+
+
 def get_colors():
     transformations = {}
     for color in COLORS:
         trans = partial(change_background_color, old_background=OLD_BACKGOUND,
                         new_background=color)
-        transformations[str(color)] = trans
+        transformations[f'bckgrnd_{str(color)}'] = trans
+    return transformations
+
+def get_colors_digits(colors=COLORS):
+    transformations = {}
+    for color in colors:     
+        trans = partial(change_digit_color, old_color=OLD_BACKGOUND,
+                        new_color=color)
+        transformations[f'digit_{str(color)}'] = trans
     return transformations
 
 
@@ -121,7 +157,17 @@ class RainbowTransformationTree(TransformationTree):
         nodes = []
         for parent in parent_nodes:
             for name, transfo in transfos.items():
-                node_name = '{}_{}'.format(parent, name)
+                #remove transforms that color the entire image in one color
+                # if ('digit_[' in name and 'bckgrnd' in parent) or ('digit_[' in parent and 'bckgrnd' in name):
+                #     #prevent coloring digit and background with the same color
+                #     cont=False
+                #     for c in COLORS:
+                #         if str(c) in name and str(c) in parent:
+                #             cont=True
+                #             break
+                #     if cont:
+                #         continue
+                node_name = '{}_{}'.format(parent, name)    
                 self.tree.add_node(self._node_index[node_name], name=node_name,
                                    last_transfo=name)
 
@@ -148,3 +194,51 @@ class RainbowTransformationTree(TransformationTree):
                 n_eq += 1
 
         return n_eq / (len(t1_nodes))
+
+
+class RainbowTransformationTreewithDigits(RainbowTransformationTree):
+    def __init__(self, train=True, tree_depth=1, *args, **kwargs):
+        self.train=train
+        self.tree_depth=tree_depth
+        super(RainbowTransformationTreewithDigits, self).__init__(*args, **kwargs)
+
+    def build_tree(self):
+        self.tree.add_node(self._node_index[self.name], name=self.name)
+
+        rotations = get_rotations()
+        colors = get_colors()
+        scales = get_scales()
+        if self.train:
+            _colors=COLORS_RG
+        else:
+            _colors=COLORS
+
+        digit_colors = get_colors_digits(colors=_colors)
+        levels = [rotations, scales, colors, digit_colors]
+
+        prev_nodes = [self.name]
+        if self.train:
+            if self.tree_depth!=1:   
+                raise NotImplementedError
+            for domain in levels[:2]:
+                prev_nodes = self._add_transfos(prev_nodes, domain)
+
+            prev_nodes_bgrnd = self._add_transfos(prev_nodes, levels[2])
+            prev_nodes_digits = self._add_transfos(prev_nodes, levels[3])
+
+            self.leaf_nodes.update([self._node_index[node] for node in prev_nodes_bgrnd+prev_nodes_digits])
+        else:
+            for domain in levels[:2]:
+                prev_nodes = self._add_transfos(prev_nodes, domain)
+
+            prev_nodes_bgrnd = self._add_transfos(prev_nodes, levels[2])
+            prev_nodes_digits = self._add_transfos(prev_nodes, levels[3])
+            if self.tree_depth==2:
+                prev_nodes_bgrnd = self._add_transfos(prev_nodes_bgrnd, dict(levels[2], **levels[3]))
+                prev_nodes_digits = self._add_transfos(prev_nodes_digits, dict(levels[2], **levels[3]))
+            if self.tree_depth>2:
+                raise NotImplementedError
+
+            self.leaf_nodes.update([self._node_index[node] for node in prev_nodes_bgrnd+prev_nodes_digits])
+        self.depth = len(levels)
+        return self._node_index[self.name]

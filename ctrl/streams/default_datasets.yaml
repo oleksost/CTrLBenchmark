@@ -81,7 +81,6 @@ md_tree_nodtd:
     _name: cifar100_tree
 
 
-
 img_rot_x_transformation:
   name: img_rotations
   max_degrees: 180
@@ -93,6 +92,9 @@ rainbow_x_transformation:
 #    n_scales: 2
 #    n_rotations: 4
 
+
+rainbow_x_transformation:
+  name: rainbow_digit
 
 randperm_x_transformation:
   name: permutations
@@ -106,6 +108,9 @@ randperm_x_transformation:
 id_x_transformation:
   name: identity
   format_image: False
+
+rainbow_x_transformation_withdigit:
+  name: rainbow_background_and_digit
 
 #noisy_nn_x_transformation:
 #  <<: *x_transfo

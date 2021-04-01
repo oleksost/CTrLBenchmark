@@ -5,7 +5,7 @@
 from ctrl.strategies.task_creation_strategy import TaskCreationStrategy
 
 
-class MixedStrategy(TaskCreationStrategy):
+class MixedStrategy(TaskCreationStrategy):  
     def __init__(self, strategies, random_select, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.strategies = strategies
@@ -14,6 +14,7 @@ class MixedStrategy(TaskCreationStrategy):
         self.random_select = random_select
         assert not self.random_select
         self.idx = 0
+        # self.repeat_task_with_each_transform=repeat_task_with_each_transform
 
     def new_task(self, task_spec, concepts, transformations, previous_tasks):
         for strat in self.strategies_list:
