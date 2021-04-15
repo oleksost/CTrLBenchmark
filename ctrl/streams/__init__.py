@@ -5,8 +5,9 @@ configuration and initialization on the CTrL benchmark.
 """
 import collections
 import os
-from os import path
+from os import path 
 from copy import deepcopy
+from ctrl.transformations.rainbow_transformation import RainbowTransformationDigits
 
 import yaml
 from numpy.random import default_rng
@@ -20,11 +21,11 @@ from ctrl.tasks.task_generator import TaskGenerator
 from ctrl.transformations import RandomNNTransformationTree, \
     ImgRotationTransformationTree, RandomPermutationsTransformation, \
     IdentityTransformation, NoisyNNTransformationTree, \
-    RainbowTransformationTree, RainbowTransformationTreewithDigits
+    RainbowTransformationTree, RainbowTransformationTreeBkgrndDigits, RainbowTransformationBackground
 
 
 def get_component_by_name(name):
-    if name in ['cifar10_tree', 'cifar100_tree', 'mnist_tree', 'svhn_tree',
+    if name in ['cifar10_tree', 'cifar100_tree', 'mnist_tree', 'cmnist_tree', 'svhn_tree',
                 'fashion_mnist_tree', 'dtd_tree', 'aircraft_tree']:
         return ImageDatasetTree
     if name.startswith('md_tree'):
@@ -42,8 +43,12 @@ def get_component_by_name(name):
         return NoisyNNTransformationTree
     if name == 'rainbow_x_transformation':
         return RainbowTransformationTree
-    if name == 'rainbow_x_transformation_withdigit':
-        return RainbowTransformationTreewithDigits
+    if name == 'rainbow_x_transformation_bkgrnddigit':
+        return RainbowTransformationTreeBkgrndDigits        
+    if name == 'rainbow_x_transformation_digit':
+        return RainbowTransformationDigits
+    if name == 'rainbow_x_transformation_bkgrnd':
+        return RainbowTransformationBackground
 
     if name == 'transfo':
         return InputDomainMutationStrategy

@@ -11,8 +11,10 @@ class DataStrategy(TaskCreationStrategy):
                  with_replacement, max_samples, min_samples, decay_rate, steps, repeat_task=0,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
         if repeat_task>0:
             n_samples_per_class_options=[ t for t in n_samples_per_class_options for i in range(repeat_task)]
+
         self.n_samples_per_class_options = n_samples_per_class_options
         self.random = random
         self.with_replacement = with_replacement

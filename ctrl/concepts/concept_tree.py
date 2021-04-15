@@ -83,7 +83,7 @@ class ConceptTree(Tree):
 
     def get_compatible_concepts(self, N=None, exclude_concepts=None,
                                 leaf_only=False, preferred_lca_dist=-1,
-                                max_lca_dist=-1, branch=None, nodes=None, force_classes=None):
+                                max_lca_dist=-1, branch=None, nodes=None):
         """
         Searches for N compatible concepts in the pool
         :param N: Int, Number of concepts to select
@@ -95,7 +95,7 @@ class ConceptTree(Tree):
         :raises ValueError: If the selection is not possible.
         """
         force_nodes = None
-        if branch is not None:
+        if branch is not None: 
             for node in self.tree.successors(self.root_node):
                 if node.descriptor == branch:
                     force_nodes = nx.descendants(self.tree, node)

@@ -23,6 +23,7 @@ IMAGE_DS = {
     'cifar10': CIFAR10,
     'cifar100': CIFAR100,
     'mnist': MNIST,
+    'cmnist': MNIST,
     'fashion-mnist': FashionMNIST,
     'svhn': SVHN,
     'dtd': DTD,

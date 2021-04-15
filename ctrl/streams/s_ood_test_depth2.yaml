@@ -8,21 +8,23 @@ task_gen:
     concept_pool:
         _name: md_tree
 
-    transformation_pool:     
+    transformation_pool:   
         _name: rainbow_x_transformation_bkgrnddigit
-        train: True
-        ordered: True
+        train: False
+        ordered: True #gos through all leaf nodes from left to right         
+        tree_depth:  2 #combine each - 6 transforms at level 1, we then combine each of the 6 with each of 
+                       #the 6 to get 36 transforms, which include the bad ones like coloring entire image in red
         whiten_digits: False
-
-    strat:
+    strat: 
         _name: mixed_remember
         random_select: False
         strategies:
             split:
-                _name: split    
-                force_concept_order: True
-                concept_order: [cmnist 0 - zero, cmnist 1 - one, cmnist 2 - two, cmnist 3 - three, cmnist 4 - four, cmnist 5 - five, cmnist 6 - six,  cmnist 7 - seven, cmnist 8 - eight, cmnist 9 - nine]
+                _name: split 
                 with_replacement: False
+                force_concept_order: True
+                repeat_task: 36 #each task is repeated for each transformation, if we have 64 different transformations (all should be leaf nodes) then we repeat ech task 36 times
+                concept_order: [cmnist 0 - zero, cmnist 1 - one, cmnist 2 - two, cmnist 3 - three, cmnist 4 - four, cmnist 5 - five, cmnist 6 - six,  cmnist 7 - seven, cmnist 8 - eight, cmnist 9 - nine]
                 traj: [[cmnist, 0, 1], 
                         [cmnist, 2, 3],
                         [cmnist, 4, 5],
@@ -30,6 +32,7 @@ task_gen:
                         [cmnist, 8, 9]]
             data:
                 _name: data
+                repeat_task: 36 #same as above
                 n_samples_per_class_options: [[4000, 200],
                                                 [4000, 200],
                                                 [4000, 200],
@@ -38,9 +41,6 @@ task_gen:
                 random: False
                 with_replacement: False
             transfo:
-                _name: transfo
-                #0 - blue background
-                # 1 - red background
-                #
-                # 3 - 
-                trans_trajectory: [0, 1, 2, 3, 4, 5]
+                _name: transfo 
+                repeat_transforms: 5 # - each transform sequence is repeated for each of the 5 tasks
+                trans_trajectory: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]

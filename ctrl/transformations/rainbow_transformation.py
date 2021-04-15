@@ -81,6 +81,55 @@ def change_background_color(images, old_background, new_background):
     # print(imgs[:, 0, :, :].std().item(), imgs[:, 1, :, :].std().item(), imgs[:, 2, :, :].std().item())
     return imgs
 
+def change_background_color_balck_digit(images, old_background, new_background):
+    """
+    :param images: BCHW
+    :return:
+    """
+    assert old_background == [0]     
+    if not torch.is_tensor(new_background):
+        new_background = torch.tensor(new_background, dtype=images.dtype)
+        if images.max() <= 1 and new_background.max() > 1:
+            new_background /= 255
+
+    if images.size(1) == 1 and len(new_background) == 3:
+        images = images.expand(-1, 3, -1, -1)
+    else:
+        assert images.size(1) == len(new_background)
+        # raise NotImplementedError(images.size(), new_background)
+
+    images = images.clone()
+
+    new_background = new_background.view(-1, 1, 1)
+    n=images.size(0)
+    ch=images.size(1)
+    if (images.view(n,ch,-1).sum(2)==0).sum(1).sum()>n:
+        #when input is already colored (digit or background)
+        non_zero_ch_idx=torch.nonzero(images[0].view(ch,-1).sum(1)).squeeze() #torch.nonzero(images[0].view(n,ch,-1).sum(2))
+        non_zero_chnls = images[:,non_zero_ch_idx]
+        if len(non_zero_chnls.shape)==3:
+            non_zero_chnls=non_zero_chnls.unsqueeze(1)
+        else:
+            non_zero_chnls=non_zero_chnls[:,0].unsqueeze(1)
+        if torch.sum(non_zero_chnls.view(n,-1)==0)>torch.sum(non_zero_chnls.view(n,-1)==1):
+            #digit was previously colored
+            bg_ratio = images.max() - non_zero_chnls
+            bg = bg_ratio * new_background
+            return images + bg
+        else:
+            #background is previously colored
+            bg = (non_zero_chnls.expand(-1, 3, -1, -1)*new_background)
+            images*=images.max()-new_background
+            return images+bg
+    else:
+        #when input is greyscale
+        bg_ratio = images.max() - images
+        bg = bg_ratio * new_background
+        # imgs = images + bg
+        # print(images[:, 0, :, :].std().item(),images[:, 1, :, :].std().item(),images[:, 2, :, :].std().item())
+        # print(imgs[:, 0, :, :].std().item(), imgs[:, 1, :, :].std().item(), imgs[:, 2, :, :].std().item())
+        return bg #imgs
+
 
 def change_digit_color(images, old_color, new_color):
     """
@@ -102,18 +151,41 @@ def change_digit_color(images, old_color, new_color):
     images = images.clone()
 
     new_color = new_color.view(-1, 1, 1)
-    imgs = images * new_color
+    n = images.shape[0]
+    ch = images.shape[1]        
+    if (images.view(n,ch,-1).sum(2)==0).sum(1).sum()>n:
+        #when input is already colored
+        non_zero_ch_idx=torch.nonzero(images[1].view(ch,-1).sum(1)).squeeze() #torch.nonzero(images[0].view(n,ch,-1).sum(2))
+        if not len(non_zero_ch_idx.shape)==0:
+            non_zero_ch_idx=non_zero_ch_idx[-1]
+        non_zero_chnls = images[:,non_zero_ch_idx].unsqueeze(1)
+        if torch.sum(non_zero_chnls.view(n,-1)==0)>torch.sum(non_zero_chnls.view(n,-1)==1):
+            #digit was previously colored
+            non_zero_chnls = non_zero_chnls.expand(-1, 3, -1, -1)*new_color
+            imgs = images + non_zero_chnls
+            # return images + bg
+        else:
+            #background is previously colored    
+            non_zero_chnls = images.max()-non_zero_chnls.expand(-1, 3, -1, -1)
+            non_zero_chnls *=new_color
+            imgs = images + non_zero_chnls
+    else:
+        imgs = images * new_color
     # print(images[:, 0, :, :].std().item(),images[:, 1, :, :].std().item(),images[:, 2, :, :].std().item())
     # print(imgs[:, 0, :, :].std().item(), imgs[:, 1, :, :].std().item(), imgs[:, 2, :, :].std().item())
     return imgs
 
 
 
-def get_colors():
+def get_colors(whiten_digit=True):    
     transformations = {}
     for color in COLORS:
-        trans = partial(change_background_color, old_background=OLD_BACKGOUND,
-                        new_background=color)
+        if whiten_digit:
+            trans = partial(change_background_color, old_background=OLD_BACKGOUND,
+                            new_background=color)
+        else:
+            trans = partial(change_background_color_balck_digit, old_background=OLD_BACKGOUND,
+                            new_background=color)
         transformations[f'bckgrnd_{str(color)}'] = trans
     return transformations
 
@@ -196,17 +268,18 @@ class RainbowTransformationTree(TransformationTree):
         return n_eq / (len(t1_nodes))
 
 
-class RainbowTransformationTreewithDigits(RainbowTransformationTree):
-    def __init__(self, train=True, tree_depth=1, *args, **kwargs):
+class RainbowTransformationTreeBkgrndDigits(RainbowTransformationTree):
+    def __init__(self, train=True, tree_depth=1, whiten_digits=True, *args, **kwargs):
         self.train=train
         self.tree_depth=tree_depth
-        super(RainbowTransformationTreewithDigits, self).__init__(*args, **kwargs)
+        self.whiten_digits=whiten_digits
+        super(RainbowTransformationTreeBkgrndDigits, self).__init__(*args, **kwargs)
 
     def build_tree(self):
         self.tree.add_node(self._node_index[self.name], name=self.name)
 
-        rotations = get_rotations()
-        colors = get_colors()
+        rotations = get_rotations()        
+        colors = get_colors(self.whiten_digits)
         scales = get_scales()
         if self.train:
             _colors=COLORS_RG
@@ -228,7 +301,7 @@ class RainbowTransformationTreewithDigits(RainbowTransformationTree):
 
             self.leaf_nodes.update([self._node_index[node] for node in prev_nodes_bgrnd+prev_nodes_digits])
         else:
-            for domain in levels[:2]:
+            for domain in levels[:2]:    
                 prev_nodes = self._add_transfos(prev_nodes, domain)
 
             prev_nodes_bgrnd = self._add_transfos(prev_nodes, levels[2])
@@ -241,4 +314,54 @@ class RainbowTransformationTreewithDigits(RainbowTransformationTree):
 
             self.leaf_nodes.update([self._node_index[node] for node in prev_nodes_bgrnd+prev_nodes_digits])
         self.depth = len(levels)
+        return self._node_index[self.name]
+
+class RainbowTransformationDigits(RainbowTransformationTree): 
+    def __init__(self, train=True, tree_depth=1, *args, **kwargs):
+        self.train=train
+        self.tree_depth=tree_depth
+        super(RainbowTransformationDigits, self).__init__(*args, **kwargs)
+
+    def build_tree(self):
+        self.tree.add_node(self._node_index[self.name], name=self.name)
+        
+        rotations = get_rotations()
+        scales = get_scales()
+        digit_colors = get_colors_digits()
+        levels = [rotations, scales, digit_colors]
+
+        prev_nodes = [self.name]
+
+        for domain in levels:
+            prev_nodes = self._add_transfos(prev_nodes, domain)
+
+        self.leaf_nodes.update([self._node_index[node] for node in prev_nodes])
+
+        self.depth = len(levels)
+
+        return self._node_index[self.name]
+
+class RainbowTransformationBackground(RainbowTransformationTree):   
+    def __init__(self, train=True, whiten_digits=True, *args, **kwargs):
+        self.train=train
+        self.whiten_digits=whiten_digits
+        super(RainbowTransformationBackground, self).__init__(*args, **kwargs)
+
+    def build_tree(self):
+        self.tree.add_node(self._node_index[self.name], name=self.name)
+        
+        rotations = get_rotations()
+        scales = get_scales()
+        bkgrnd_colors = get_colors(self.whiten_digits)
+        levels = [rotations, scales, bkgrnd_colors]
+
+        prev_nodes = [self.name]
+
+        for domain in levels:
+            prev_nodes = self._add_transfos(prev_nodes, domain)
+
+        self.leaf_nodes.update([self._node_index[node] for node in prev_nodes])
+
+        self.depth = len(levels)
+
         return self._node_index[self.name]

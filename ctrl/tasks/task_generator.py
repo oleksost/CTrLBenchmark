@@ -118,7 +118,7 @@ class TaskGenIter(object):
 class TaskGenerator(object):
     def __init__(self, concept_pool: ConceptTree, transformation_pool,
                  samples_per_class, split_names, strat,
-                 seed: int, flatten, n_initial_classes, use_cat_id, tta, cycle_transforms=False,
+                 seed: int, flatten, n_initial_classes, use_cat_id, tta,
                  *args, **kwargs):
         """
 
@@ -156,7 +156,6 @@ class TaskGenerator(object):
 
         self.strat = strat
         self.contains_loaded_tasks = False
-        self.cycle_transforms=cycle_transforms
 
     @property
     def n_tasks(self):

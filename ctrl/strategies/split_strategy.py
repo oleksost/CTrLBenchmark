@@ -51,7 +51,7 @@ class SplitStrategy(TaskCreationStrategy):
                     nodes = traj_step
                 else:
                     branch = None
-                    nodes = None
+                    nodes = None        
                 if self.force_concept_order and self.order is not None:
                     nodes=[]
                     for c in traj_step:
