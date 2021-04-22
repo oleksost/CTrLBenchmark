@@ -78,9 +78,9 @@ def _generate_samples_from_descr(categories, attributes, n_samples_per_class,
             cat_id = torch.tensor([i]).expand(split_samples.shape[0], 1)
             split_labels = torch.cat([split_labels, cat_id], dim=1)
             #Create unlabeled samples
-            n_unlabeled=n_samples-n_labeled
+            n_unlabeled=len(split_samples)-n_labeled
             if n_unlabeled>0:
-                idx_unlabeled = rnd.choice(list(range(n_samples)), n_unlabeled, replace=False)
+                idx_unlabeled = rnd.choice(list(range(len(split_samples))), n_unlabeled, replace=False)
                 split_labels[idx_unlabeled]=-1 #mark unlabeled samples with -1
 
             cat_samples.append(split_samples)

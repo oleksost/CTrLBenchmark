@@ -28,11 +28,11 @@ task_gen:
             data:
                 _name: data  
                 n_samples_per_class_options: [[[4000, 400],[200,200]], # [n_samples_train, n_labeled_train], [n_samples_valid, n_labeled_valid]
-                                    [[400, 40],[20, 20]],
-                                    [[400, 40],[20, 20]],
-                                    [[400, 40],[20, 20]],
-                                    [[400, 40],[20, 20]],
-                                    [[400, 40],[20, 20]]]
+                                    [[4000, 40],[20, 20]],
+                                    [[4000, 40],[20, 20]],
+                                    [[4000, 40],[20, 20]],
+                                    [[4000, 40],[20, 20]],
+                                    [[4000, 40],[20, 20]]]
                 
                 random: False
                 with_replacement: False

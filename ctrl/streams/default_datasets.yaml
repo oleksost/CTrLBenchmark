@@ -28,10 +28,6 @@ mnist_tree: &mnist
   expand_channels: True
   img_size: [28, 28]
 
-cmnist_tree: &cmnist
-  <<: *mnist
-  name: 'cmnist'
-
 fashion_mnist_tree:
   <<: *mnist
   name: 'fashion-mnist'
@@ -48,7 +44,7 @@ dtd_tree:
   name: 'dtd'
   n_levels: 1
   n_children: [47]
-  val_size: 27
+  val_size: 40
 
 md_tree:
   name: 'md'
@@ -67,32 +63,6 @@ md_tree:
     _name: dtd_tree
   child_6:
     _name: cifar100_tree
-  child_7:
-    _name: cmnist_tree
-    img_size: [32, 32]
-
-md_tree_28:
-  name: 'md'
-  n_attrs: 0
-  child_1:
-    _name: mnist_tree
-  child_2:
-    _name: svhn_tree
-    img_size: [28, 28]
-  child_3:
-    _name: cifar10_tree
-    img_size: [28, 28]
-  child_4:
-    _name: fashion_mnist_tree
-  child_5:
-    _name: dtd_tree
-    img_size: [28, 28]
-  child_6:
-    _name: cifar100_tree
-    img_size: [28, 28]
-  child_7:
-    _name: cmnist_tree
-    img_size: [28, 28]
 
 md_tree_nodtd:
   name: 'md'
@@ -123,11 +93,8 @@ rainbow_x_transformation:
 #    n_rotations: 4
 
 
-rainbow_x_transformation_digit:
+rainbow_x_transformation:
   name: rainbow_digit
-
-rainbow_x_transformation_bkgrnd:
-  name: rainbow_bkgrnd
 
 randperm_x_transformation:
   name: permutations
@@ -142,7 +109,7 @@ id_x_transformation:
   name: identity
   format_image: False
 
-rainbow_x_transformation_bkgrnddigit:
+rainbow_x_transformation_withdigit:
   name: rainbow_background_and_digit
 
 #noisy_nn_x_transformation:
@@ -172,7 +139,7 @@ split:
 random:
   <<: *mut_strat
   domain: xyz
-  p_mutate: 1
+  p_mutate: 1zz
   p_last: 1
   n_attr_min: 0
   n_attr_max: 0
