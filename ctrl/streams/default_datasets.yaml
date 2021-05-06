@@ -133,8 +133,8 @@ id_x_transformation:
   name: identity
   format_image: False
 
-rainbow_x_transformation_withdigit:
-  name: rainbow_background_and_digit
+rainbow_x_transformation_bkgrnddigit:
+  name: rainbow_x_transformation_bkgrnddigit
 
 #noisy_nn_x_transformation:
 #  <<: *x_transfo

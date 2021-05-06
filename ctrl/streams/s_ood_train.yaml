@@ -9,7 +9,7 @@ task_gen:
         _name: md_tree_cmnist
 
     transformation_pool:          
-        _name: rainbow_x_transformation_withdigit
+        _name: rainbow_x_transformation_bkgrnddigit
         train: True
         ordered: True
         whiten_digits: False
