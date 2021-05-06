@@ -24,7 +24,7 @@ from ctrl.transformations import RandomNNTransformationTree, \
     RainbowTransformationTree, RainbowTransformationTreeBkgrndDigits, RainbowTransformationBackground
 
 
-def get_component_by_name(name):
+def get_component_by_name(name):      
     if name in ['cifar10_tree', 'cifar100_tree', 'mnist_tree', 'cmnist_tree', 'svhn_tree',
                 'fashion_mnist_tree', 'dtd_tree', 'aircraft_tree']:
         return ImageDatasetTree
@@ -47,7 +47,7 @@ def get_component_by_name(name):
         return RainbowTransformationTreeBkgrndDigits        
     if name == 'rainbow_x_transformation_digit':
         return RainbowTransformationDigits
-    if name == 'rainbow_x_transformation_bkgrnd':
+    if name == 'rainbow_x_transformation_withdigit':
         return RainbowTransformationBackground
 
     if name == 'transfo':

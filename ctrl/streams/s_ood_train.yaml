@@ -5,11 +5,11 @@ task_gen:
     split_names: ['Train', 'Val', 'Test']
     tta: False
 
-    concept_pool:
-        _name: md_tree
+    concept_pool:   
+        _name: md_tree_cmnist
 
-    transformation_pool:     
-        _name: rainbow_x_transformation_bkgrnddigit
+    transformation_pool:          
+        _name: rainbow_x_transformation_withdigit
         train: True
         ordered: True
         whiten_digits: False

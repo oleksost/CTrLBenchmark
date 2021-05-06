@@ -45,6 +45,30 @@ dtd_tree:
   n_levels: 1
   n_children: [47]
   val_size: 40
+  
+cmnist_tree: &cmnist
+  <<: *mnist
+  name: 'cmnist'
+
+md_tree_cmnist:
+  name: 'md'
+  n_attrs: 0
+  child_1:
+    _name: mnist_tree
+    img_size: [32, 32]
+  child_2:
+    _name: svhn_tree
+  child_3:
+    _name: cifar10_tree
+  child_4:
+    _name: fashion_mnist_tree
+    img_size: [32, 32]
+  child_5:
+    _name: dtd_tree
+  child_6:
+    _name: cifar100_tree
+  child_7:
+    _name: cmnist_tree
 
 md_tree:
   name: 'md'

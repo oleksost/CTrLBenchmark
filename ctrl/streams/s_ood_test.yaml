@@ -5,11 +5,11 @@ task_gen:
     split_names: ['Train', 'Val', 'Test']
     tta: False
 
-    concept_pool:
-        _name: md_tree
+    concept_pool:   
+        _name: md_tree_cmnist
 
     transformation_pool:   
-        _name: rainbow_x_transformation_bkgrnddigit
+        _name: rainbow_x_transformation_withdigit
         train: False
         ordered: True #gos through all leaf nodes from left to right         
         # tree_depth:  2 #combine each - 6 transforms at level 1, we then combine each of the 6 with each of 
