@@ -53,15 +53,31 @@ class SplitStrategy(TaskCreationStrategy):
                     branch = None
                     nodes = None        
                 if self.force_concept_order and self.order is not None:
-                    nodes=[]
-                    for c in traj_step:
-                        nodes.append(self.order[c])
-                    branch=None
+                    if len(self.order)==len(traj_step):
+                        nodes=[]
+                        for c in traj_step:
+                            nodes.append(self.order[c])
+                        branch=None
+                    else:
+                        order=self.order[len(previous_tasks)]
+                        if order!='None':
+                            nodes=[]
+                            for i,c in enumerate(traj_step):
+                                nodes.append(order[i])
+                            branch=None
                 new_concepts = concepts.get_compatible_concepts(len(traj_step),
                                                             old_concepts, True,
                                                             preferred_lca_dist=self.concepts_preferred_lca_dist,
                                                             max_lca_dist=self.concepts_max_lca_dist,
                                                             branch=branch, nodes=nodes)
+                if self.force_concept_order and nodes is not None:
+                    concepts_list=[]
+                    for n in nodes:
+                        for c in new_concepts:
+                            if c.descriptor.endswith(n):
+                                concepts_list.append(c)
+                    new_concepts=concepts_list
+
                 for id, concept in zip(traj_step, new_concepts):
                     self.concept_order[id] = concept
             # for id in traj_step:

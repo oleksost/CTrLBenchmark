@@ -5,6 +5,6 @@
 from .identity_transformation import IdentityTransformation
 from .img_rotations import ImgRotationTransformationTree   
 from .noisy_nn_transformation import NoisyNNTransformationTree
-from .rainbow_transformation import RainbowTransformationTree, RainbowTransformationTreeBkgrndDigits, RainbowTransformationBackground
+from .rainbow_transformation import RainbowTransformationTree, RainbowTransformationTreeBkgrndDigits, RainbowTransformationBackground, RainbowTransformationTreeBkgrndDigitsStochastic
 from .randperm_transformation import RandomPermutationsTransformation
 from .transformation_tree import RandomNNTransformationTree

@@ -21,7 +21,7 @@ from ctrl.tasks.task_generator import TaskGenerator
 from ctrl.transformations import RandomNNTransformationTree, \
     ImgRotationTransformationTree, RandomPermutationsTransformation, \
     IdentityTransformation, NoisyNNTransformationTree, \
-    RainbowTransformationTree, RainbowTransformationTreeBkgrndDigits, RainbowTransformationBackground
+    RainbowTransformationTree, RainbowTransformationTreeBkgrndDigits, RainbowTransformationBackground, RainbowTransformationTreeBkgrndDigitsStochastic
 
 
 def get_component_by_name(name):      
@@ -45,6 +45,8 @@ def get_component_by_name(name):
         return RainbowTransformationTree
     if name == 'rainbow_x_transformation_bkgrnddigit':
         return RainbowTransformationTreeBkgrndDigits        
+    if name == 'rainbow_x_transformation_bkgrnddigitstoch':
+        return RainbowTransformationTreeBkgrndDigitsStochastic
     if name == 'rainbow_x_transformation_digit':
         return RainbowTransformationDigits
     if name == 'rainbow_x_transformation_withdigit':

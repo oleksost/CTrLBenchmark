@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 from functools import partial
-
+import numpy as np
 import torch
 from ctrl.transformations.transformation_tree import TransformationTree
 from ctrl.transformations.utils import BatchedTransformation
@@ -53,82 +53,141 @@ def get_scales():
     return transformations
 
 
-def change_background_color(images, old_background, new_background):
+def change_background_color(images, old_background, new_background, new_background2=None, p=1):
     """
     :param images: BCHW
     :return:
     """
-    assert old_background == [0]     
-    if not torch.is_tensor(new_background):
-        new_background = torch.tensor(new_background, dtype=images.dtype)
-        if images.max() <= 1 and new_background.max() > 1:
-            new_background /= 255
+    if new_background2 is None:
+        assert old_background == [0]     
+        if not torch.is_tensor(new_background):
+            new_background = torch.tensor(new_background, dtype=images.dtype)
+            if images.max() <= 1 and new_background.max() > 1:
+                new_background /= 255
 
-    if images.size(1) == 1 and len(new_background) == 3:
-        images = images.expand(-1, 3, -1, -1)
-    else:
-        assert images.size(1) == len(new_background)
-        # raise NotImplementedError(images.size(), new_background)
-
-    images = images.clone()
-
-    new_background = new_background.view(-1, 1, 1)
-
-    bg_ratio = images.max() - images
-    bg = bg_ratio * new_background
-    imgs = images + bg
-    # print(images[:, 0, :, :].std().item(),images[:, 1, :, :].std().item(),images[:, 2, :, :].std().item())
-    # print(imgs[:, 0, :, :].std().item(), imgs[:, 1, :, :].std().item(), imgs[:, 2, :, :].std().item())
-    return imgs
-
-def change_background_color_balck_digit(images, old_background, new_background):
-    """
-    :param images: BCHW
-    :return:
-    """
-    assert old_background == [0]     
-    if not torch.is_tensor(new_background):
-        new_background = torch.tensor(new_background, dtype=images.dtype)
-        if images.max() <= 1 and new_background.max() > 1:
-            new_background /= 255
-
-    if images.size(1) == 1 and len(new_background) == 3:
-        images = images.expand(-1, 3, -1, -1)
-    else:
-        assert images.size(1) == len(new_background)
-        # raise NotImplementedError(images.size(), new_background)
-
-    images = images.clone()
-
-    new_background = new_background.view(-1, 1, 1)
-    n=images.size(0)
-    ch=images.size(1)
-    if (images.view(n,ch,-1).sum(2)==0).sum(1).sum()>n:
-        #when input is already colored (digit or background)
-        non_zero_ch_idx=torch.nonzero(images[0].view(ch,-1).sum(1)).squeeze() #torch.nonzero(images[0].view(n,ch,-1).sum(2))
-        non_zero_chnls = images[:,non_zero_ch_idx]
-        if len(non_zero_chnls.shape)==3:
-            non_zero_chnls=non_zero_chnls.unsqueeze(1)
+        if images.size(1) == 1 and len(new_background) == 3:
+            images = images.expand(-1, 3, -1, -1)
         else:
-            non_zero_chnls=non_zero_chnls[:,0].unsqueeze(1)
-        if torch.sum(non_zero_chnls.view(n,-1)==0)>torch.sum(non_zero_chnls.view(n,-1)==1):
-            #digit was previously colored
-            bg_ratio = images.max() - non_zero_chnls
-            bg = bg_ratio * new_background
-            return images + bg
-        else:
-            #background is previously colored
-            bg = (non_zero_chnls.expand(-1, 3, -1, -1)*new_background)
-            images*=images.max()-new_background
-            return images+bg
-    else:
-        #when input is greyscale
+            assert images.size(1) == len(new_background)
+            # raise NotImplementedError(images.size(), new_background)
+
+        images = images.clone()
+
+        new_background = new_background.view(-1, 1, 1)
+
         bg_ratio = images.max() - images
         bg = bg_ratio * new_background
-        # imgs = images + bg
+        imgs = images + bg
         # print(images[:, 0, :, :].std().item(),images[:, 1, :, :].std().item(),images[:, 2, :, :].std().item())
         # print(imgs[:, 0, :, :].std().item(), imgs[:, 1, :, :].std().item(), imgs[:, 2, :, :].std().item())
-        return bg #imgs
+        return imgs
+    else:
+        raise NotImplementedError
+
+def change_background_color_balck_digit(images, old_background, new_background, new_background2=None, p=1):
+    """
+    :param images: BCHW
+    :return:
+    """
+    if new_background2 is None:
+        assert old_background == [0]     
+        if not torch.is_tensor(new_background):
+            new_background = torch.tensor(new_background, dtype=images.dtype)
+            if images.max() <= 1 and new_background.max() > 1:
+                new_background /= 255
+
+        if images.size(1) == 1 and len(new_background) == 3:
+            images = images.expand(-1, 3, -1, -1)
+        else:
+            assert images.size(1) == len(new_background)
+            # raise NotImplementedError(images.size(), new_background)
+
+        images = images.clone()
+
+        new_background = new_background.view(-1, 1, 1)
+        n=images.size(0)
+        ch=images.size(1)
+        if (images.view(n,ch,-1).sum(2)==0).sum(1).sum()>n:
+            #when input is already colored (digit or background)
+            non_zero_ch_idx=torch.nonzero(images[0].view(ch,-1).sum(1)).squeeze() #torch.nonzero(images[0].view(n,ch,-1).sum(2))
+            non_zero_chnls = images[:,non_zero_ch_idx]
+            if len(non_zero_chnls.shape)==3:
+                non_zero_chnls=non_zero_chnls.unsqueeze(1)
+            else:
+                non_zero_chnls=non_zero_chnls[:,0].unsqueeze(1)
+            if torch.sum(non_zero_chnls.view(n,-1)==0)>torch.sum(non_zero_chnls.view(n,-1)==1):
+                #digit was previously colored
+                bg_ratio = images.max() - non_zero_chnls
+                bg = bg_ratio * new_background
+                return images + bg
+            else:
+                #background is previously colored
+                bg = (non_zero_chnls.expand(-1, 3, -1, -1)*new_background)
+                images*=images.max()-new_background
+                return images+bg
+        else:
+            #when input is greyscale
+            bg_ratio = images.max() - images
+            bg = bg_ratio * new_background
+            # imgs = images + bg
+            # print(images[:, 0, :, :].std().item(),images[:, 1, :, :].std().item(),images[:, 2, :, :].std().item())
+            # print(imgs[:, 0, :, :].std().item(), imgs[:, 1, :, :].std().item(), imgs[:, 2, :, :].std().item())
+            return bg #imgs
+    else:
+        assert old_background == [0]     
+        if not torch.is_tensor(new_background):
+            new_background = torch.tensor(new_background, dtype=images.dtype)
+            if images.max() <= 1 and new_background.max() > 1:
+                new_background /= 255
+        if not torch.is_tensor(new_background2):
+            new_background2 = torch.tensor(new_background2, dtype=images.dtype)
+            if images.max() <= 1 and new_background2.max() > 1:
+                new_background2 /= 255
+
+        if images.size(1) == 1 and len(new_background) == 3:
+            images = images.expand(-1, 3, -1, -1)
+        else:
+            assert images.size(1) == len(new_background)
+            # raise NotImplementedError(images.size(), new_background)
+
+        images = images.clone()
+
+        new_background = new_background.view(-1, 1, 1)
+        new_background2 = new_background2.view(-1, 1, 1)
+        n=images.size(0)
+        ch=images.size(1)
+
+        if (images.view(n,ch,-1).sum(2)==0).sum(1).sum()>n:
+            raise NotImplementedError
+            #when input is already colored (digit or background)
+            non_zero_ch_idx=torch.nonzero(images[0].view(ch,-1).sum(1)).squeeze() #torch.nonzero(images[0].view(n,ch,-1).sum(2))
+            non_zero_chnls = images[:,non_zero_ch_idx]
+            if len(non_zero_chnls.shape)==3:
+                non_zero_chnls=non_zero_chnls.unsqueeze(1)
+            else:
+                non_zero_chnls=non_zero_chnls[:,0].unsqueeze(1)
+            if torch.sum(non_zero_chnls.view(n,-1)==0)>torch.sum(non_zero_chnls.view(n,-1)==1):
+                #digit was previously colored
+                bg_ratio = images.max() - non_zero_chnls
+                bg = bg_ratio * new_background
+                return images + bg
+            else:
+                #background is previously colored
+                bg = (non_zero_chnls.expand(-1, 3, -1, -1)*new_background)
+                images*=images.max()-new_background
+                return images+bg
+        else:
+            #when input is greyscale
+            bg_ratio = images.max() - images
+            idxs = torch.randperm(len(bg_ratio))
+            n_imgs=int(p*len(bg_ratio))
+            bg_ratio[idxs[:n_imgs]] *= new_background2
+            bg_ratio[idxs[n_imgs:]] *= new_background
+            # imgs = images + bg
+            # print(images[:, 0, :, :].std().item(),images[:, 1, :, :].std().item(),images[:, 2, :, :].std().item())
+            # print(imgs[:, 0, :, :].std().item(), imgs[:, 1, :, :].std().item(), imgs[:, 2, :, :].std().item())
+            return bg_ratio #imgs
+
 
 
 def change_digit_color(images, old_color, new_color):
@@ -177,16 +236,27 @@ def change_digit_color(images, old_color, new_color):
 
 
 
-def get_colors(whiten_digit=True):    
+def get_colors(whiten_digit=True, stochastic=False, p=0.5):    
     transformations = {}
-    for color in COLORS:
-        if whiten_digit:
-            trans = partial(change_background_color, old_background=OLD_BACKGOUND,
-                            new_background=color)
+    for i, color in enumerate(COLORS):
+        if not stochastic:
+            if whiten_digit:
+                trans = partial(change_background_color, old_background=OLD_BACKGOUND,
+                                new_background=color)
+            else:
+                trans = partial(change_background_color_balck_digit, old_background=OLD_BACKGOUND,
+                                new_background=color)
+            transformations[f'bckgrnd_{str(color)}'] = trans
         else:
+            if i==0:
+                new_background2=COLORS[1]
+            elif i==1:
+                new_background2=COLORS[0]
+            else:
+                new_background2=COLORS[i-1]
             trans = partial(change_background_color_balck_digit, old_background=OLD_BACKGOUND,
-                            new_background=color)
-        transformations[f'bckgrnd_{str(color)}'] = trans
+                                new_background=color, new_background2=new_background2, p=p)
+            transformations[f'bckgrnd_{str(color)}'] = trans
     return transformations
 
 def get_colors_digits(colors=COLORS):
@@ -315,6 +385,62 @@ class RainbowTransformationTreeBkgrndDigits(RainbowTransformationTree):
             self.leaf_nodes.update([self._node_index[node] for node in prev_nodes_bgrnd+prev_nodes_digits])
         self.depth = len(levels)
         return self._node_index[self.name]
+
+class RainbowTransformationTreeBkgrndDigitsStochastic(RainbowTransformationTreeBkgrndDigits):
+    def build_tree(self):
+        self.tree.add_node(self._node_index[self.name], name=self.name)
+
+        rotations = get_rotations()        
+        
+        if self.train:
+            colors = get_colors(self.whiten_digits, stochastic=True, p=0.1)
+            scales = get_scales()
+            if self.train:
+                _colors=COLORS_RG
+            else:
+                _colors=COLORS
+
+            digit_colors = get_colors_digits(colors=_colors)
+            levels = [rotations, scales, colors, digit_colors]
+
+            prev_nodes = [self.name]
+            if self.tree_depth!=1:   
+                raise NotImplementedError
+            for domain in levels[:2]:
+                prev_nodes = self._add_transfos(prev_nodes, domain)
+
+            prev_nodes_bgrnd = self._add_transfos(prev_nodes, levels[2])
+            prev_nodes_digits = self._add_transfos(prev_nodes, levels[3])
+
+            self.leaf_nodes.update([self._node_index[node] for node in prev_nodes_bgrnd+prev_nodes_digits])
+        else:
+            colors = get_colors(self.whiten_digits, stochastic=True, p=0.5)
+            scales = get_scales()
+            if self.train:
+                _colors=COLORS_RG
+            else:
+                _colors=COLORS
+
+            digit_colors = get_colors_digits(colors=_colors)
+            levels = [rotations, scales, colors, digit_colors]
+
+            prev_nodes = [self.name]
+            for domain in levels[:2]:    
+                prev_nodes = self._add_transfos(prev_nodes, domain)
+
+            prev_nodes_bgrnd = self._add_transfos(prev_nodes, levels[2])
+            prev_nodes_digits = self._add_transfos(prev_nodes, levels[3])
+            if self.tree_depth==2:
+                prev_nodes_bgrnd = self._add_transfos(prev_nodes_bgrnd, dict(levels[2], **levels[3]))
+                prev_nodes_digits = self._add_transfos(prev_nodes_digits, dict(levels[2], **levels[3]))
+            if self.tree_depth>2:
+                raise NotImplementedError
+
+            self.leaf_nodes.update([self._node_index[node] for node in prev_nodes_bgrnd+prev_nodes_digits])
+        self.depth = len(levels)
+        return self._node_index[self.name]
+
+
 
 class RainbowTransformationDigits(RainbowTransformationTree): 
     def __init__(self, train=True, tree_depth=1, *args, **kwargs):
