@@ -30,7 +30,7 @@ SCALES = {
 
 
 def get_rotations():
-    transformations = {}
+    transformations = {} 
     for name, angle in ROTATIONS.items():
         trans = transforms.Compose([
             transforms.ToPILImage(),
@@ -236,9 +236,11 @@ def change_digit_color(images, old_color, new_color):
 
 
 
-def get_colors(whiten_digit=True, stochastic=False, p=0.5):    
+def get_colors(whiten_digit=True, stochastic=False, p=0.5, color_idx=None):    
     transformations = {}
-    for i, color in enumerate(COLORS):
+    if color_idx is not None:
+        i=color_idx
+        color=COLORS[i]
         if not stochastic:
             if whiten_digit:
                 trans = partial(change_background_color, old_background=OLD_BACKGOUND,
@@ -257,6 +259,26 @@ def get_colors(whiten_digit=True, stochastic=False, p=0.5):
             trans = partial(change_background_color_balck_digit, old_background=OLD_BACKGOUND,
                                 new_background=color, new_background2=new_background2, p=p)
             transformations[f'bckgrnd_{str(color)}'] = trans
+    else:
+        for i, color in enumerate(COLORS):
+            if not stochastic:
+                if whiten_digit:
+                    trans = partial(change_background_color, old_background=OLD_BACKGOUND,
+                                    new_background=color)
+                else:
+                    trans = partial(change_background_color_balck_digit, old_background=OLD_BACKGOUND,
+                                    new_background=color)
+                transformations[f'bckgrnd_{str(color)}'] = trans
+            else:
+                if i==0:
+                    new_background2=COLORS[1]
+                elif i==1:
+                    new_background2=COLORS[0]
+                else:
+                    new_background2=COLORS[i-1]
+                trans = partial(change_background_color_balck_digit, old_background=OLD_BACKGOUND,
+                                    new_background=color, new_background2=new_background2, p=p)
+                transformations[f'bckgrnd_{str(color)}'] = trans
     return transformations
 
 def get_colors_digits(colors=COLORS):
@@ -387,13 +409,19 @@ class RainbowTransformationTreeBkgrndDigits(RainbowTransformationTree):
         return self._node_index[self.name]
 
 class RainbowTransformationTreeBkgrndDigitsStochastic(RainbowTransformationTreeBkgrndDigits):
+    def __init__(self, train=True, tree_depth=1, whiten_digits=True, trans_idx=None, *args, **kwargs):
+        self.train=train  
+        self.tree_depth=tree_depth
+        self.whiten_digits=whiten_digits
+        self.trans_idx=trans_idx
+        super(RainbowTransformationTreeBkgrndDigitsStochastic, self).__init__(train=self.train, tree_depth=tree_depth, whiten_digits=whiten_digits, *args, **kwargs)
     def build_tree(self):
         self.tree.add_node(self._node_index[self.name], name=self.name)
 
         rotations = get_rotations()        
         
         if self.train:
-            colors = get_colors(self.whiten_digits, stochastic=True, p=0.1)
+            colors = get_colors(self.whiten_digits, stochastic=True, p=0.05, color_idx=self.trans_idx)
             scales = get_scales()
             if self.train:
                 _colors=COLORS_RG
@@ -414,7 +442,7 @@ class RainbowTransformationTreeBkgrndDigitsStochastic(RainbowTransformationTreeB
 
             self.leaf_nodes.update([self._node_index[node] for node in prev_nodes_bgrnd+prev_nodes_digits])
         else:
-            colors = get_colors(self.whiten_digits, stochastic=True, p=0.5)
+            colors = get_colors(self.whiten_digits, stochastic=True, p=0.5,color_idx=self.trans_idx)
             scales = get_scales()
             if self.train:
                 _colors=COLORS_RG

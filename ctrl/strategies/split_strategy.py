@@ -11,7 +11,7 @@ from ctrl.strategies.task_creation_strategy import TaskCreationStrategy
 
 class SplitStrategy(TaskCreationStrategy):       
     def __init__(self, reuse_attrs, with_replacement, traj=None,
-                 first_level_weighting=False, repeat_task=0, force_concept_order=False, concept_order=None, *args, **kwargs):
+                 first_level_weighting=False, repeat_task=0, force_concept_order=False, concept_order=None, index_classes_by_traj=False, *args, **kwargs):
         self.force_concept_order = force_concept_order
         self.order = concept_order
         if repeat_task>0:
@@ -22,6 +22,7 @@ class SplitStrategy(TaskCreationStrategy):
         assert first_level_weighting in [None, 'class_uniform', 'ds_uniform']
         self.first_level_weighting = first_level_weighting
         self.traj = traj
+        self.index_classes_by_traj=index_classes_by_traj
 
         self.idx = 0
         self.concept_order = {}
@@ -53,7 +54,7 @@ class SplitStrategy(TaskCreationStrategy):
                     branch = None
                     nodes = None        
                 if self.force_concept_order and self.order is not None:
-                    if len(self.order)==len(traj_step):
+                    if self.index_classes_by_traj:
                         nodes=[]
                         for c in traj_step:
                             nodes.append(self.order[c])
